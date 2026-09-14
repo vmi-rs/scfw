@@ -246,6 +246,7 @@ extern "C" void __fastcall entry(void* argument1, void* argument2);
 #define IMPORT_BEGIN()                                                        \
     namespace sc {                                                            \
     namespace detail {                                                        \
+    __declspec(allocate(".data$00"))                                          \
     extern "C" dispatch_table __dispatch_table;                               \
     } /* namespace detail */                                                  \
     } /* namespace sc */
