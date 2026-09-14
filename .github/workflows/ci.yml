@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:                       # Allows push to trigger the workflow.
+  pull_request:               # Allows PRs to trigger the workflow.
+  workflow_dispatch:          # Allows manual triggering of the workflow.
+
+env:
+  LLVM_VERSION: "23"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: cmake build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up LLVM
+        run: |
+          wget --quiet https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh "$LLVM_VERSION"
+          sudo apt-get install --yes "llvm-$LLVM_VERSION"
+
+      - name: Fetch Windows SDK
+        run: bash scripts/fetch-winsdk.sh
+
+      - name: Build release presets
+        run: |
+          cmake --preset x64
+          cmake --build --preset x64
+          cmake --preset x86
+          cmake --build --preset x86
+
+      - name: Build debug presets
+        run: |
+          cmake --preset x64-debug
+          cmake --build --preset x64-debug
+          cmake --preset x86-debug
+          cmake --build --preset x86-debug
+
+      - name: Test release build script
+        run: bash scripts/build-all.sh
