@@ -72,6 +72,37 @@ else()
     )
 endif()
 
+# Verify the entry point is the first byte of the image. Execution starts at
+# the shellcode base address, so _init must sit at offset 0.
+string(REGEX MATCH "AddressOfEntryPoint: (0x[0-9a-fA-F]+)" MATCH_RESULT "${HEADERS_OUTPUT}")
+if(NOT MATCH_RESULT)
+    message(FATAL_ERROR "Could not find AddressOfEntryPoint in llvm-readobj output")
+endif()
+
+set(ENTRY_POINT "${CMAKE_MATCH_1}")
+
+string(REGEX MATCH "BaseOfCode: (0x[0-9a-fA-F]+)" MATCH_RESULT "${HEADERS_OUTPUT}")
+if(NOT MATCH_RESULT)
+    message(FATAL_ERROR "Could not find BaseOfCode in llvm-readobj output")
+endif()
+
+set(BASE_OF_CODE "${CMAKE_MATCH_1}")
+
+math(EXPR ENTRY_OFFSET "${ENTRY_POINT} - ${BASE_OF_CODE}")
+
+if(NOT ENTRY_OFFSET EQUAL 0)
+    message(FATAL_ERROR
+        "PE verification FAILED!\n"
+        "Entry point is ${ENTRY_OFFSET} bytes into the image, not at offset 0.\n"
+        "  AddressOfEntryPoint: ${ENTRY_POINT}\n"
+        "  BaseOfCode: ${BASE_OF_CODE}\n"
+        "Something emitted code ahead of .text$00. A section without a"
+        " $-suffix is the usual cause: plain .text sorts before .text$00.\n"
+        "File: ${PE_FILE}"
+    )
+endif()
+message(STATUS "PE verification PASSED: entry point at offset 0")
+
 # Verify no imports (shellcode must be fully self-contained)
 execute_process(
     COMMAND ${LLVM_READOBJ} --coff-imports ${PE_FILE}
