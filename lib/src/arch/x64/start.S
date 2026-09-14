@@ -22,8 +22,13 @@
 # Contains _pc, _cleanup_*, and _start - the core runtime functions
 # that need to be in shellcode memory (they get freed after execution).
 #
-
-    .section .text$10,"ax"
+# Each routine gets its own COMDAT section, keyed on its own symbol.
+# A single plain .section would place every routine in one non-COMDAT
+# chunk, which /OPT:REF keeps as a GC root, so referencing any routine
+# would drag in all the others. Per-symbol COMDATs are the assembly
+# equivalent of -ffunction-sections and let the linker drop what the
+# payload never calls (such as the unused cleanup variant).
+#
 
 #++
 #
@@ -44,6 +49,7 @@
 #
 #--
 
+    .section .text$10,"ax",discard,_pc
     .globl _pc
     .p2align SCFW_P2ALIGN
 _pc:
@@ -72,6 +78,7 @@ _pc:
 #
 #--
 
+    .section .text$10,"ax",discard,_cleanup_usermode
     .globl _cleanup_usermode
     .p2align SCFW_P2ALIGN
 _cleanup_usermode:
@@ -110,6 +117,7 @@ _cleanup_usermode:
 #
 #--
 
+    .section .text$10,"ax",discard,_cleanup_kernelmode
     .globl _cleanup_kernelmode
     .p2align SCFW_P2ALIGN
 _cleanup_kernelmode:
@@ -153,6 +161,7 @@ _cleanup_kernelmode:
 #
 #--
 
+    .section .text$10,"ax",discard,_start
     .globl _start
     .p2align SCFW_P2ALIGN
 _start:

@@ -19,6 +19,10 @@
 # __init is the PE entry point (/ENTRY:_init), so it must be
 # placed here to be the first instruction executed.
 #
+# __init stays in a plain section - it is always live and must come first.
+# __pc gets its own COMDAT section so /OPT:REF can drop it in payloads
+# that never call _pic().
+#
 
     .section .text$00,"ax"
 
@@ -89,6 +93,7 @@ __init:
 #
 #--
 
+    .section .text$00,"ax",discard,__pc
     .globl __pc
     .p2align SCFW_P2ALIGN
 __pc:
