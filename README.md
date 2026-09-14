@@ -301,6 +301,7 @@ These are set globally via CMake cache variables and can be overridden per-targe
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `SCFW_OPT_LTO` | `BOOL` | `ON` | Enable Link-Time Optimization. Generally reduces shellcode size by allowing the linker to eliminate dead code across translation units. However, it can sometimes *increase* size. The `opengl_triangle` example intentionally disables it because LTO produced a larger binary in that case. |
+| `SCFW_LTO_LEVEL` | `STRING` | `2` | Optimization level of the LTO pipeline that runs inside the linker (`/OPT:LLDLTO`), which is where an LTO build generates its final code. Only has an effect when `SCFW_OPT_LTO` is `ON`. Levels `0` and `1` behave alike, as do `2` and `3`. Lower levels inline less, so payloads dominated by a single large call graph shrink and small ones grow (by up to 2x). Measure per payload. |
 | `SCFW_OPT_DEBUG_INFO` | `BOOL` | `OFF` | Create a `.pdb` file and include CodeView debug info in the output PE. Useful for debugging with a disassembler, but adds an `.rdata` section to the PE. |
 | `SCFW_OPT_CLEANUP` | `BOOL` | `OFF` | Enable self-cleanup. The shellcode calls `VirtualFree` (user-mode) or `ExFreePool` (kernel-mode) to free its own memory before returning. This maps to `SCFW_ENABLE_CLEANUP` and also controls whether the assembly startup wrapper (`start.S`) is linked in. |
 | `SCFW_FUNCTION_ALIGNMENT` | `STRING` | `1` | Function alignment in bytes. The default of 1 means no padding between functions, producing the smallest binary. Set this to `0` to use the linker's default function alignment. Affects both C++ code (`-falign-functions=N`) and assembly (`.p2align`). |
@@ -318,6 +319,14 @@ set_target_properties(opengl_triangle PROPERTIES SCFW_OPT_LTO OFF)
 
 scfw_extract_shellcode(opengl_triangle)
 ```
+
+The frontend optimization level is fixed at `-Os` for non-Debug builds and is not exposed as a CMake option, since the best level differs per payload. To override it for a single payload, set the flag on that payload's source:
+
+```cmake
+set_source_files_properties(main.cpp PROPERTIES COMPILE_OPTIONS -Oz)
+```
+
+A `-O` flag added with `target_compile_options()` is silently overridden, because CMake emits a target's own options before the ones inherited from `scfw` (clang takes the last `-O`).
 
 ## Examples
 

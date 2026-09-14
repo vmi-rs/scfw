@@ -5,6 +5,7 @@ option(SCFW_OPT_CLEANUP "Enable self-cleanup (free shellcode memory on exit)" OF
 option(SCFW_OPT_ZERO_BASE "Set PE image base to 0 on x86" OFF)
 set(SCFW_FUNCTION_ALIGNMENT 1 CACHE STRING "Function alignment in bytes (default=1)")
 set(SCFW_FILE_ALIGNMENT 1 CACHE STRING "PE file alignment in bytes (default=1)")
+set(SCFW_LTO_LEVEL 2 CACHE STRING "LTO optimization level, 0-3 (default=2)")
 
 # Target is set by toolchain file via CMAKE_CXX_COMPILER_TARGET
 if(NOT CMAKE_CXX_COMPILER_TARGET)
@@ -61,7 +62,10 @@ if(CMAKE_SYSTEM_PROCESSOR STREQUAL "X86")
     )
 endif()
 
-# Build-type specific optimization flags
+# Build-type specific optimization flags.
+# -Os is the smallest choice for nearly every payload. -Oz occasionally wins,
+# but the decision is per payload, so it belongs in the payload's own
+# CMakeLists (see README, "Build Options") rather than in a global option.
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     list(APPEND SCFW_COMPILE_FLAGS -O0)
 else()
@@ -122,6 +126,22 @@ define_property(DIRECTORY PROPERTY SCFW_OPT_LTO INHERITED
                " across translation units. Can sometimes increase size."
                " Default: ON.")
 set_property(GLOBAL PROPERTY SCFW_OPT_LTO ${SCFW_OPT_LTO})
+
+define_property(TARGET PROPERTY SCFW_LTO_LEVEL INHERITED
+    BRIEF_DOCS "LTO optimization level"
+    FULL_DOCS  "Optimization level of the LTO pipeline that runs in the"
+               " linker (/OPT:LLDLTO), where the final code for an LTO build"
+               " is generated. Only has an effect when SCFW_OPT_LTO is ON."
+               " Lower levels inline less, which often shrinks the shellcode."
+               " Default: 2, the lld default.")
+define_property(DIRECTORY PROPERTY SCFW_LTO_LEVEL INHERITED
+    BRIEF_DOCS "LTO optimization level"
+    FULL_DOCS  "Optimization level of the LTO pipeline that runs in the"
+               " linker (/OPT:LLDLTO), where the final code for an LTO build"
+               " is generated. Only has an effect when SCFW_OPT_LTO is ON."
+               " Lower levels inline less, which often shrinks the shellcode."
+               " Default: 2, the lld default.")
+set_property(GLOBAL PROPERTY SCFW_LTO_LEVEL ${SCFW_LTO_LEVEL})
 
 define_property(TARGET PROPERTY SCFW_OPT_DEBUG_INFO INHERITED
     BRIEF_DOCS "Enable debug info (PDB/CodeView)"
@@ -192,9 +212,13 @@ function(scfw_extract_shellcode target_name)
     # Apply LTO if enabled
     get_property(_lto TARGET ${target_name} PROPERTY SCFW_OPT_LTO)
     if(_lto)
+        get_property(_lto_level TARGET ${target_name} PROPERTY SCFW_LTO_LEVEL)
         target_compile_options(${target_name} PRIVATE -flto)
-        target_link_options(${target_name} PRIVATE -flto)
-        message(STATUS "LTO enabled for ${target_name}")
+        target_link_options(${target_name} PRIVATE
+            -flto
+            -Wl,/OPT:LLDLTO=${_lto_level}
+        )
+        message(STATUS "LTO enabled for ${target_name} (level ${_lto_level})")
     endif()
 
     # Apply debug info if enabled
