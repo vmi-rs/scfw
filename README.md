@@ -332,12 +332,12 @@ A `-O` flag added with `target_compile_options()` is silently overridden, becaus
 
 | Example | x86 | x64 | Description |
 |---------|----:|----:|-------------|
-| `empty` | 8 B | 8 B | Bare-minimum template with an empty `entry()` function. Use as a starting point. |
-| `writeconsole` | 328 B | 328 B | Writes "Hello, World!" to the console via `WriteConsoleA`. Simplest useful example. |
-| `writeconsole_xor` | 380 B | 404 B | Same as `writeconsole`, but built with `SCFW_ENABLE_XOR_STRING`. All strings are XOR-encoded in the binary and decoded at runtime. |
-| `messagebox` | 504 B | 512 B | Shows a `MessageBoxA` dialog. Demonstrates `SCFW_FLAG_DYNAMIC_LOAD` since `user32.dll` isn't loaded by default in console processes. |
-| `opengl_triangle` | 2340 B | 2756 B | Renders an OpenGL triangle from shellcode. Dynamically loads `user32.dll`, `gdi32.dll`, and `opengl32.dll`. Extensively documented with commentary on compile-time option trade-offs. Refer to this example for practical demonstrations of options and flags in action. |
-| `kernel_query_user` | 1572 B | 1716 B | Kernel-mode shellcode that queries the current process's user information (domain, username, SID) and prints it via `DbgPrintEx`. Demonstrates kernel-mode imports, data symbol pointers (`SeTokenObjectType`), and variadic function calls. |
+| `empty` | 8&nbsp;B | 8&nbsp;B | Bare-minimum template with an empty `entry()` function. Use as a starting point. |
+| `writeconsole` | 328&nbsp;B | 328&nbsp;B | Writes "Hello, World!" to the console via `WriteConsoleA`. Simplest useful example. |
+| `writeconsole_xor` | 380&nbsp;B | 404&nbsp;B | Same as `writeconsole`, but built with `SCFW_ENABLE_XOR_STRING`. All strings are XOR-encoded in the binary and decoded at runtime. |
+| `messagebox` | 504&nbsp;B | 512&nbsp;B | Shows a `MessageBoxA` dialog. Demonstrates `SCFW_FLAG_DYNAMIC_LOAD` since `user32.dll` isn't loaded by default in console processes. |
+| `opengl_triangle` | 2340&nbsp;B | 2756&nbsp;B | Renders an OpenGL triangle from shellcode. Dynamically loads `user32.dll`, `gdi32.dll`, and `opengl32.dll`. Extensively documented with commentary on compile-time option trade-offs. Refer to this example for practical demonstrations of options and flags in action. |
+| `kernel_query_user` | 1572&nbsp;B | 1716&nbsp;B | Kernel-mode shellcode that queries the current process's user information (domain, username, SID) and prints it via `DbgPrintEx`. Demonstrates kernel-mode imports, data symbol pointers (`SeTokenObjectType`), and variadic function calls. |
 
 ## See Also
 
